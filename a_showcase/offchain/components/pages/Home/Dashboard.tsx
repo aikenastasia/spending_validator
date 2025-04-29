@@ -12,7 +12,6 @@ import {
   Lovelace,
   MintingPolicy,
   mintingPolicyToId,
-  paymentCredentialOf,
   SpendingValidator,
   toUnit,
   TxBuilder,
@@ -36,7 +35,7 @@ export default function Dashboard(props: { setActionResult: (result: string) => 
 
   if (!connection) return <span className="uppercase">Wallet Disconnected</span>;
 
-  const { api, lucid, address } = connection;
+  const { api, lucid, address, pkh } = connection;
 
   async function submitTx(tx: TxSignBuilder) {
     const txSigned = await tx.sign.withWallet().complete();
@@ -175,7 +174,6 @@ export default function Dashboard(props: { setActionResult: (result: string) => 
         try {
           if (!lucid.wallet()) lucid.selectWallet.fromAPI(api);
 
-          const pkh = paymentCredentialOf(address).hash;
           const spendingScript = applyParamsToScript(Script.SpendScWallet, [pkh]);
           const spendingValidator: SpendingValidator = { type: "PlutusV3", script: spendingScript };
           const validatorAddress = validatorToAddress(network, spendingValidator);
@@ -200,7 +198,6 @@ export default function Dashboard(props: { setActionResult: (result: string) => 
         try {
           if (!lucid.wallet()) lucid.selectWallet.fromAPI(api);
 
-          const pkh = paymentCredentialOf(address).hash;
           const spendingScript = applyParamsToScript(Script.SpendScWallet, [pkh]);
           const spendingValidator: SpendingValidator = { type: "PlutusV3", script: spendingScript };
           const validatorAddress = validatorToAddress(network, spendingValidator);
@@ -228,8 +225,6 @@ export default function Dashboard(props: { setActionResult: (result: string) => 
         try {
           if (!lucid.wallet()) lucid.selectWallet.fromAPI(api);
 
-          const pkh = paymentCredentialOf(address).hash;
-
           const receiptScript = applyParamsToScript(Script.Receipts, [pkh]);
           const receiptValidator: SpendingValidator = { type: "PlutusV3", script: receiptScript };
 
@@ -254,8 +249,6 @@ export default function Dashboard(props: { setActionResult: (result: string) => 
       unlock: async () => {
         try {
           if (!lucid.wallet()) lucid.selectWallet.fromAPI(api);
-
-          const pkh = paymentCredentialOf(address).hash;
 
           const receiptScript = applyParamsToScript(Script.Receipts, [pkh]);
           const receiptValidator: Validator = { type: "PlutusV3", script: receiptScript };
