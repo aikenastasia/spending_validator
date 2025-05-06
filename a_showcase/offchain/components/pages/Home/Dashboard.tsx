@@ -24,6 +24,7 @@ import { network } from "@/config/lucid";
 import { Script } from "@/config/script";
 import { ActionGroup } from "@/types/action";
 import { useWallet } from "@/components/connection/context";
+import BasicTransfer from "@/components/actions/0_BasicTransfer";
 import CheckDatum from "@/components/actions/A_CheckDatum";
 import CheckRedeemer from "@/components/actions/B_CheckRedeemer";
 import ScWallet from "@/components/actions/C_ScWallet";
@@ -69,6 +70,27 @@ export default function Dashboard(props: { setActionResult: (result: string) => 
   }
 
   const actions: Record<string, ActionGroup> = {
+    //#region No smart-contract interaction
+    BasicTransaction: {
+      transfer: async ({ toAddress, lovelace }: { toAddress: Address; lovelace: Lovelace }) => {
+        try {
+          if (!lucid.wallet()) lucid.selectWallet.fromAPI(api);
+
+          const tx = await lucid
+            .newTx()
+            .pay.ToAddress(toAddress, { lovelace })
+            .validTo(new Date().getTime() + 15 * 60_000) // ~15 minutes
+            .complete();
+
+          submitTx(tx).then(props.setActionResult).catch(props.onError);
+        } catch (error) {
+          props.onError(error);
+        }
+      },
+    },
+    //#endregion
+
+    //#region Smart-contract interactions
     CheckDatum: {
       lock: async (lovelace: Lovelace) => {
         try {
@@ -400,6 +422,7 @@ export default function Dashboard(props: { setActionResult: (result: string) => 
         }
       },
     },
+    //#endregion
   };
 
   return (
@@ -407,6 +430,11 @@ export default function Dashboard(props: { setActionResult: (result: string) => 
       <span>{address}</span>
 
       <Accordion variant="splitted">
+        {/* No SC */}
+        <AccordionItem key="0" aria-label="Accordion 0" title="Basic Transaction (no smart-contract interaction)">
+          <BasicTransfer onTransfer={actions.BasicTransaction.transfer} />
+        </AccordionItem>
+
         {/* Check Datum */}
         <AccordionItem key="1" aria-label="Accordion 1" title="Check Datum">
           <CheckDatum onLock={actions.CheckDatum.lock} onUnlock={actions.CheckDatum.unlock} />
