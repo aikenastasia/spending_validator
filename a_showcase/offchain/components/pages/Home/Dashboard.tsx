@@ -72,15 +72,18 @@ export default function Dashboard(props: { setActionResult: (result: string) => 
   const actions: Record<string, ActionGroup> = {
     //#region No smart-contract interaction
     BasicTransaction: {
-      transfer: async ({ toAddress, lovelace }: { toAddress: Address; lovelace: Lovelace }) => {
+      transfer: async ({ toAddress, lovelace, changeAddress }: { toAddress: Address; lovelace: Lovelace; changeAddress: Address }) => {
         try {
           if (!lucid.wallet()) lucid.selectWallet.fromAPI(api);
 
+          const utxos = await lucid.wallet().getUtxos();
+
           const tx = await lucid
             .newTx()
+            .collectFrom(utxos)
             .pay.ToAddress(toAddress, { lovelace })
             .validTo(new Date().getTime() + 15 * 60_000) // ~15 minutes
-            .complete();
+            .complete({ changeAddress });
 
           submitTx(tx).then(props.setActionResult).catch(props.onError);
         } catch (error) {
@@ -432,7 +435,7 @@ export default function Dashboard(props: { setActionResult: (result: string) => 
       <Accordion variant="splitted">
         {/* No SC */}
         <AccordionItem key="0" aria-label="Accordion 0" title="Basic Transaction (no smart-contract interaction)">
-          <BasicTransfer onTransfer={actions.BasicTransaction.transfer} />
+          <BasicTransfer defaultChangeAddress={address} onTransfer={actions.BasicTransaction.transfer} />
         </AccordionItem>
 
         {/* Check Datum */}
